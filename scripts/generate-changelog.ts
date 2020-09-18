@@ -6,16 +6,20 @@ const { version: lastVersion } = require("../package.json");
 const changeLogPath = resolve(__dirname, "../CHANGELOG.md");
 
 let newVersion = lastVersion;
+let latestCommitId = '';
 
 console.log("Gets Release Version from GITHUB_EVENT_PATH");
 if (process.env.GITHUB_EVENT_PATH) {
   const {
     pull_request: { title },
+    head_commit: { id }
   } = require(process.env.GITHUB_EVENT_PATH);
 
   if (/^release/i.test(title))
+  {
     newVersion = (title as string).match(/release ([\d\.]+)/i)[1];
-  else {
+    latestCommitId = id;
+  } else {
     console.log("Not target pull request, exiting");
     process.exit(0);
   }
@@ -26,7 +30,7 @@ console.log("Bump Version");
 execSync(`npm version ${newVersion}`);
 
 const gitLogOutput = execSync(
-  `git log v${lastVersion}... --format=%s`
+  `git log v${lastVersion}...${latestCommitId} --format=%s`
 ).toString("utf-8");
 
 const commitsArray = gitLogOutput
